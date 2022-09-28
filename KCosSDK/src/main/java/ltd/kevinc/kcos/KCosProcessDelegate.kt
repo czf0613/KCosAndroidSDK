@@ -1,6 +1,7 @@
 package ltd.kevinc.kcos
 
 import android.util.Log
+import java.io.File
 
 interface KCosProcessDelegate {
     /**
@@ -20,6 +21,10 @@ interface KCosProcessDelegate {
      */
     fun onContinueUploadTick(currentStep: Long) {
 
+    }
+
+    fun onConversionSuccess(targetFile: File) {
+        targetFile.deleteOnExit()
     }
 
     fun onError(e: Throwable) {
