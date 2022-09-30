@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.net.Uri
+import android.provider.MediaStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -90,14 +91,14 @@ class KCosUtils {
      * @throws Exception 当文件的Uri无法被查询到的时候，会扔出一个异常，通常情况下不会发生这样的事情
      */
     fun compressPicture(uri: Uri, context: Context, width: Int = -1, height: Int = -1): ByteArray {
-//        val filePath = context.contentResolver
-//            .query(uri, null, null, null, null, null)?.let {
-//                it.use { cursor ->
-//                    cursor.moveToFirst()
-//                    val index = cursor.getColumnIndex(MediaStore.Images.Media._ID)
-//                    cursor.getString(index)
-//                }
-//            } ?: uri.path
+        val filePath = context.contentResolver
+            .query(uri, arrayOf(MediaStore.Images.Media._ID), null, null, null, null)?.let {
+                it.use { cursor ->
+                    cursor.moveToFirst()
+                    val index = cursor.getColumnIndex(MediaStore.Images.Media._ID)
+                    cursor.getString(index)
+                }
+            } ?: uri.path
 
         TODO("转码工具未完成")
     }

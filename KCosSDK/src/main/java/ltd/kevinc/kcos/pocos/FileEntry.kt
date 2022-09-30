@@ -13,12 +13,13 @@ data class CreateFileEntryRequest(
     val path: String = "/",
     val fileNameWithExt: String = "file.unknown",
     val fileSize: Long,
-    val sha256: String,
     val mimeType: String = "application/octet-stream",
     val deadLine: String = "9999-12-31T23:59:59.999+08:00",
     val protection: Int = 0,
     val securityPayload: String = ""
-)
+) {
+    lateinit var sha256: String
+}
 
 @Serializable
 data class CreateFileEntryReply(

@@ -2,12 +2,14 @@ package ltd.kevinc.cos
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import ltd.kevinc.kcos.KCosClient
 import ltd.kevinc.kcos.KCosFileUploader
 import ltd.kevinc.kcos.KCosProcessDelegate
 import ltd.kevinc.kcos.R
+import ltd.kevinc.kcos.pocos.CreateFileEntryRequest
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
@@ -31,9 +33,9 @@ class MainActivity : AppCompatActivity() {
             println(file.length())
 
             val userId = KCosClient.initializeKCosService(
-                "f92b2839-73de-498b-93c1-c70f07d8345b",
-                "c89a8ab5-14b0-4653-8260-1233d6c042b8",
-                "114514"
+                "20b332a9-35a9-0b09-0bf2-79421bde4a54",
+                "e8c688ac-7a6e-1add-1a70-564a02fce624",
+                "1919810"
             )
 
             println(userId)
@@ -42,27 +44,30 @@ class MainActivity : AppCompatActivity() {
 
             println(file.length())
 
-//            uploader.uploadData(file,
-//                CreateFileEntryRequest(
-//                    path = "/czf0613/soft/",
-//                    fileNameWithExt = "fake.file",
-//                    fileSize = file.length(),
-//                    sha256 = "b9af94e6c2a399db5934f8f8e53757a7cffab8ed1a7207e97f4bee1aa02076b6"
-//                ),
-//                object : KCosProcessDelegate {
-//                    override fun onUploadTick(currentStep: Long, totalSteps: Long) {
-//                        println("上传进度：$currentStep / $totalSteps")
-//                    }
-//
-//                    override fun onError(e: Throwable) {
-//                        e.printStackTrace()
-//                    }
-//                })
-            uploader.continueUpload(36, file, object : KCosProcessDelegate {
-                override fun onContinueUploadTick(currentStep: Long) {
-                    println(currentStep)
-                }
-            })
+            uploader.uploadData(
+                file.toUri(),
+                this@MainActivity,
+                CreateFileEntryRequest(
+                    path = "/czf0613/soft/",
+                    fileNameWithExt = "fake.file",
+                    fileSize = file.length(),
+                    deadLine = "2022-12-31"
+                ),
+                object : KCosProcessDelegate {
+                    override fun onUploadTick(currentStep: Long, totalSteps: Long) {
+                        println("上传进度：$currentStep / $totalSteps")
+                    }
+
+                    override fun onError(e: Throwable) {
+                        e.printStackTrace()
+                    }
+                })
+
+//            uploader.continueUpload(36, file, object : KCosProcessDelegate {
+//                override fun onContinueUploadTick(currentStep: Long) {
+//                    println(currentStep)
+//                }
+//            })
         }
     }
 }
