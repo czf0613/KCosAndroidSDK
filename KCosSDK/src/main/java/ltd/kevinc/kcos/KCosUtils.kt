@@ -1,16 +1,19 @@
 package ltd.kevinc.kcos
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 /**
  * 媒体压缩工具，可以将各种媒体素材进行压缩然后进行上传
@@ -19,6 +22,7 @@ import java.io.ByteArrayOutputStream
  * 2，视频会被转换成h264，帧率被限30
  * 3，音频会被转换为aac
  */
+@Suppress("BlockingMethodInNonBlockingContext")
 class KCosUtils {
     init {
         System.loadLibrary("MediaConverter")
@@ -101,6 +105,7 @@ class KCosUtils {
      * @see compressPicture 参数类型基本一致
      * @throws Exception 解码或转码过程出现错误（一般是本地的native库出错，SDK暂无办法解决）
      */
+    @SuppressLint("Recycle")
     @Deprecated(message = "未开发完成，不要使用", level = DeprecationLevel.ERROR)
     suspend fun compressVideo(
         uri: Uri,
@@ -126,7 +131,13 @@ class KCosUtils {
         withContext(Dispatchers.Default) {
             compressVideoJob?.cancel()
             compressVideoJob = launch {
-                TODO("转码工具未完成")
+                try {
+                    val output = convertVideoWithOptions(filePath!!, width, height)
+                    delegate.onConversionSuccess(File(output))
+                } catch (e: Exception) {
+                    delegate.onError(e)
+                    Log.e("KCos.video.convert", "native code error!")
+                }
             }
         }
     }
@@ -135,8 +146,9 @@ class KCosUtils {
      * 将MP3、FLAC等音频转化为aac格式编码的音频
      * 原理是源文件 -> PCM -> aac音频
      * 请不要放进来非常长的声音文件！爆内存！
-     * @param input PCM格式的原始音频素材
+     * @param input 原始音频素材
      * @param bitRate 输出的比特率（自带单位K），要求高一点就256，如果仅仅是发送语音消息的，设置为64就够了
+     * @return 返回被编码完成的aac音频
      */
     suspend fun compressAudioData(input: ByteArray, bitRate: Int = 256): ByteArray {
         TODO()
