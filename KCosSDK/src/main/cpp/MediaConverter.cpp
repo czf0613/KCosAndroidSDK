@@ -18,9 +18,9 @@
 extern "C"
 JNIEXPORT jstring JNICALL
 Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz, jint file_fd,
-                                                       jstring cacheDir, jint width, jint height) {
+                                                       jstring cache_dir, jint width, jint height) {
     int javaFileFd = file_fd;
-    std::string cacheDirPathBase = env->GetStringUTFChars(cacheDir, nullptr);
+    std::string cacheDirPathBase = env->GetStringUTFChars(cache_dir, nullptr);
     srand(time(nullptr));
     int fileNameRandInt = (random() % 900000) + 100000;
     std::string fileName = std::to_string(fileNameRandInt) + ".mp4";
@@ -45,5 +45,8 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
 
     // 此处开始转码
 
+    // 打扫战场
+    remove(inputFileCopyName.c_str());
+    LOGI("KCos.NDK.Video.InputFileCopy", "file copy cache removed.");
     return env->NewStringUTF(outFileName.c_str());
 }

@@ -33,6 +33,31 @@ class KCosUtils {
     companion object {
         // 这个值可以改，默认是30，可以改成1-100
         var jpegQuality = 30
+
+        /**
+         * 删除KCos产生的转码缓存文件
+         * 别在转码过程中清除缓存，搞事情！
+         */
+        suspend fun clearCache(context: Context) {
+            val copyCacheDir = File("${context.cacheDir.path}/KCosCopyCache/")
+            val outputCacheDir = File("${context.cacheDir.path}/KCosConversionCache/")
+
+            withContext(Dispatchers.IO) {
+                if (copyCacheDir.exists()) {
+                    copyCacheDir.deleteRecursively()
+                    Log.i("KCos.Cache", "Copy Cache已清除")
+                } else {
+                    Log.i("KCos.Cache", "Copy Cache为空")
+                }
+
+                if (outputCacheDir.exists()) {
+                    outputCacheDir.deleteRecursively()
+                    Log.i("KCos.Cache", "Output Cache已清除")
+                } else {
+                    Log.i("KCos.Cache", "Output Cache为空")
+                }
+            }
+        }
     }
 
     /**

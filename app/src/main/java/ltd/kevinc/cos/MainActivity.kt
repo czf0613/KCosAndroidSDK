@@ -1,13 +1,10 @@
 package ltd.kevinc.cos
 
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import ltd.kevinc.kcos.KCosClient
-import ltd.kevinc.kcos.KCosProcessDelegate
 import ltd.kevinc.kcos.KCosUtils
 import ltd.kevinc.kcos.R
 import java.io.File
@@ -67,22 +64,24 @@ class MainActivity : AppCompatActivity() {
 //            val bitmap = BitmapFactory.decodeStream(stream)
 //            println(bitmap.byteCount)
 //
-            val decoder = KCosUtils()
-            Log.i("开始转码", file.path)
-            decoder.compressVideo(file.toUri(), this@MainActivity, -1, -1, object :
-                KCosProcessDelegate {
-                override fun onUploadTick(currentStep: Long, totalSteps: Long) {
-                    println("上传进度：$currentStep / $totalSteps")
-                }
+//            val decoder = KCosUtils()
+//            Log.i("开始转码", file.path)
+//            decoder.compressVideo(file.toUri(), this@MainActivity, -1, -1, object :
+//                KCosProcessDelegate {
+//                override fun onUploadTick(currentStep: Long, totalSteps: Long) {
+//                    println("上传进度：$currentStep / $totalSteps")
+//                }
+//
+//                override fun onError(e: Throwable) {
+//                    e.printStackTrace()
+//                }
+//
+//                override fun onConversionSuccess(targetFile: File) {
+//
+//                }
+//            })
 
-                override fun onError(e: Throwable) {
-                    e.printStackTrace()
-                }
-
-                override fun onConversionSuccess(targetFile: File) {
-
-                }
-            })
+            KCosUtils.clearCache(this@MainActivity)
 
 //            val uploader = KCosFileUploader()
 //
