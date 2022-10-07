@@ -40,6 +40,7 @@ android {
             version '3.18.1'
         }
     }
+    namespace 'ltd.kevinc.kcos'
 }
 
 dependencies {

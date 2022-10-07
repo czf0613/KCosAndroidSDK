@@ -1,12 +1,10 @@
 package ltd.kevinc.kcos
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
-import android.provider.MediaStore
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -14,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileNotFoundException
 
 /**
  * 媒体压缩工具，可以将各种媒体素材进行压缩然后进行上传
@@ -32,17 +31,18 @@ class KCosUtils {
     private var compressVideoJob: Job? = null
 
     companion object {
-        // 这个值可以改，默认是100，可以改成1-100
-        var jpegQuality = 100
+        // 这个值可以改，默认是30，可以改成1-100
+        var jpegQuality = 30
     }
 
     /**
      * 特别小心，视频一旦被这里处理，会限制帧率为30
-     * @param filePath 输入文件的路径
-     * @return 输出文件的路径
+     * @param fileFd 输入文件的描述符，由于android系统限制，非常难直接使用文件路径进行处理
+     * @return 输出文件的路径，这个文件本质上是放在了app内的Cache dir里面，这样不需要权限也可以进行读取
      */
     private external fun convertVideoWithOptions(
-        filePath: String,
+        fileFd: Int,
+        cacheDir: String,
         width: Int,
         height: Int
     ): String
@@ -101,12 +101,11 @@ class KCosUtils {
     }
 
     /**
-     * 将手机内的视频压缩成h264编码
+     * 将手机内的视频压缩成h264编码，
+     * 绝大部分的错误，会在delegate的OnError方法中扔出，但不意味着这个方法很安全，可能是一些JNI方法级别的错误
      * @see compressPicture 参数类型基本一致
      * @throws Exception 解码或转码过程出现错误（一般是本地的native库出错，SDK暂无办法解决）
      */
-    @SuppressLint("Recycle")
-    @Deprecated(message = "未开发完成，不要使用", level = DeprecationLevel.ERROR)
     suspend fun compressVideo(
         uri: Uri,
         context: Context,
@@ -116,24 +115,21 @@ class KCosUtils {
     ) {
         this.delegate = delegate
 
-        val filePath = withContext(Dispatchers.IO) {
-            context.contentResolver
-                .query(uri, arrayOf(MediaStore.Images.Media._ID), null, null, null, null)?.let {
-                    it.use { cursor ->
-                        cursor.moveToFirst()
-                        val index = cursor.getColumnIndex(MediaStore.Images.Media._ID)
-                        cursor.getString(index)
-                    }
-                } ?: uri.path
-        }
-
         // 在计算核心上面跑转码运算性能会更好
         withContext(Dispatchers.Default) {
             compressVideoJob?.cancel()
+
             compressVideoJob = launch {
                 try {
-                    val output = convertVideoWithOptions(filePath!!, width, height)
-                    delegate.onConversionSuccess(File(output))
+                    context.contentResolver.openFileDescriptor(uri, "r")?.use { fd ->
+                        val output = convertVideoWithOptions(
+                            fd.detachFd(),
+                            context.cacheDir.path,
+                            width,
+                            height
+                        )
+                        delegate.onConversionSuccess(File(output))
+                    } ?: throw FileNotFoundException()
                 } catch (e: Exception) {
                     delegate.onError(e)
                     Log.e("KCos.video.convert", "native code error!")
@@ -157,7 +153,7 @@ class KCosUtils {
     /**
      * 编码PCM数据到aac格式
      */
-    suspend fun encodePCMAudioData(pcm: ByteArray, bitRate: Int = 256): ByteArray {
+    suspend fun encodePCMAudioData(pcm: ByteArray, bitRate: Int = 64): ByteArray {
         TODO()
     }
 }

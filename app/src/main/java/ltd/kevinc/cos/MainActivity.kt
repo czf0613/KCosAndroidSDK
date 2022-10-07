@@ -1,15 +1,16 @@
 package ltd.kevinc.cos
 
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import ltd.kevinc.kcos.KCosClient
-import ltd.kevinc.kcos.KCosFileDownloader
+import ltd.kevinc.kcos.KCosProcessDelegate
+import ltd.kevinc.kcos.KCosUtils
 import ltd.kevinc.kcos.R
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
     private var cnt = 0
@@ -27,7 +28,6 @@ class MainActivity : AppCompatActivity() {
 
             println(userId)
 
-            val downloader = KCosFileDownloader()
 //            downloader.downloadLargeFile(44)
 //                .onStart {
 //                    println("开始下载")
@@ -44,8 +44,8 @@ class MainActivity : AppCompatActivity() {
 //                    cnt += item.size
 //                    println("已接受$cnt 字节")
 //                }
-            val bin = downloader.downloadSimpleFile(8)
-            println(bin.size)
+//            val bin = KCosFileDownloader.downloadSimpleFile(8)
+//            println(bin.size)
         }
     }
 
@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
 
         lifecycleScope.launch {
-//            val file = File("${applicationContext.dataDir.path}/fake.dat")
+            val file = File("${applicationContext.dataDir.path}/fake.dat")
 //            file.createNewFile()
 //
 //            for (i in 0..10240) {
@@ -67,9 +67,22 @@ class MainActivity : AppCompatActivity() {
 //            val bitmap = BitmapFactory.decodeStream(stream)
 //            println(bitmap.byteCount)
 //
-//            val decoder = KCosUtils()
-//            val jpegData = decoder.compressBitmap(bitmap)
-//            println(jpegData.size)
+            val decoder = KCosUtils()
+            Log.i("开始转码", file.path)
+            decoder.compressVideo(file.toUri(), this@MainActivity, -1, -1, object :
+                KCosProcessDelegate {
+                override fun onUploadTick(currentStep: Long, totalSteps: Long) {
+                    println("上传进度：$currentStep / $totalSteps")
+                }
+
+                override fun onError(e: Throwable) {
+                    e.printStackTrace()
+                }
+
+                override fun onConversionSuccess(targetFile: File) {
+
+                }
+            })
 
 //            val uploader = KCosFileUploader()
 //
