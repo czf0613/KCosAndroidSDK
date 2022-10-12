@@ -2,7 +2,6 @@ package ltd.kevinc.cos
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import ltd.kevinc.kcos.KCosClient
@@ -116,7 +115,6 @@ class MainActivity : AppCompatActivity() {
                 ByteArray(10485552), CreateFileEntryRequest(
                     path = "/czf0613/androidTest/",
                     fileNameWithExt = "array.wtf",
-                    fileSize = 10485552,
                     deadLine = "2022-12-31"
                 )
             )

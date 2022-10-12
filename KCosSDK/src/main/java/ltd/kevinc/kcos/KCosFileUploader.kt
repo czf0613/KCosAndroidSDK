@@ -37,6 +37,9 @@ object KCosFileUploader {
         context.contentResolver.openInputStream(uri)!!.use { stream ->
             createFileEntryRequest.sha256 = calculateSHA256(stream)
         }
+        context.contentResolver.openFileDescriptor(uri, "r")!!.use { fd ->
+            createFileEntryRequest.fileSize = fd.statSize
+        }
 
         val reply = withContext(Dispatchers.IO) {
             val requestBody =
@@ -107,6 +110,7 @@ object KCosFileUploader {
             throw IndexOutOfBoundsException()
 
         createFileEntryRequest.sha256 = calculateSHA256(content)
+        createFileEntryRequest.fileSize = content.size.toLong()
 
         return withContext(Dispatchers.IO) {
             val requestBody =
