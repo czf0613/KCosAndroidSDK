@@ -2,10 +2,14 @@ package ltd.kevinc.cos
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import ltd.kevinc.kcos.KCosClient
+import ltd.kevinc.kcos.KCosFileUploader
 import ltd.kevinc.kcos.R
+import ltd.kevinc.kcos.pocos.CreateFileEntryRequest
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
     private var cnt = 0
@@ -23,7 +27,7 @@ class MainActivity : AppCompatActivity() {
 
             println(userId)
 
-//            downloader.downloadLargeFile(44)
+//            KCosFileDownloader.downloadLargeFile(44)
 //                .onStart {
 //                    println("开始下载")
 //                }
@@ -48,7 +52,15 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
 
         lifecycleScope.launch {
-//            val file = File("${applicationContext.dataDir.path}/fake.dat")
+            val userId = KCosClient.initializeKCosService(
+                "20b332a9-35a9-0b09-0bf2-79421bde4a54",
+                "e8c688ac-7a6e-1add-1a70-564a02fce624",
+                "1919810"
+            )
+
+            println(userId)
+
+            val file = File("${applicationContext.dataDir.path}/fake.dat")
 //            file.createNewFile()
 //
 //            for (i in 0..10240) {
@@ -85,30 +97,30 @@ class MainActivity : AppCompatActivity() {
 //
 //            println(file.length())
 
-//            uploader.uploadData(
+//            val (entry1, flow1) = KCosFileUploader.uploadData(
 //                file.toUri(),
 //                this@MainActivity,
 //                CreateFileEntryRequest(
-//                    path = "/czf0613/soft/",
-//                    fileNameWithExt = "fake.file",
+//                    path = "/czf0613/android_test/",
+//                    fileNameWithExt = "fake.nope",
 //                    fileSize = file.length(),
 //                    deadLine = "2022-12-31"
-//                ),
-//                object : KCosProcessDelegate {
-//                    override fun onUploadTick(currentStep: Long, totalSteps: Long) {
-//                        println("上传进度：$currentStep / $totalSteps")
-//                    }
-//
-//                    override fun onError(e: Throwable) {
-//                        e.printStackTrace()
-//                    }
-//                })
+//                )
+//            )
+//            println(entry1.id)
+//            flow1?.collect {
+//                println("packs: $it")
+//            }
 
-//            uploader.continueUpload(36, file, object : KCosProcessDelegate {
-//                override fun onContinueUploadTick(currentStep: Long) {
-//                    println(currentStep)
-//                }
-//            })
+            val entry2 = KCosFileUploader.uploadData(
+                ByteArray(10485552), CreateFileEntryRequest(
+                    path = "/czf0613/androidTest/",
+                    fileNameWithExt = "array.wtf",
+                    fileSize = 10485552,
+                    deadLine = "2022-12-31"
+                )
+            )
+            println(entry2.id)
         }
     }
 }

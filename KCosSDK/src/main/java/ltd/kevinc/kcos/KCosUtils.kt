@@ -32,7 +32,6 @@ class KCosUtils {
         System.loadLibrary("MediaConverter")
     }
 
-    private lateinit var delegate: KCosProcessDelegate
     private var compressVideoJob: Job? = null
     private lateinit var mediaEncoder: MediaCodec
     private lateinit var mediaDecoder: MediaCodec
@@ -151,10 +150,7 @@ class KCosUtils {
         context: Context,
         width: Int = -1,
         height: Int = -1,
-        delegate: KCosProcessDelegate
     ) {
-        this.delegate = delegate
-
         // 在计算核心上面跑转码运算性能会更好
         withContext(Dispatchers.Default) {
             compressVideoJob?.cancel()
@@ -168,10 +164,8 @@ class KCosUtils {
                             width,
                             height
                         )
-                        delegate.onConversionSuccess(File(output))
                     } ?: throw FileNotFoundException()
                 } catch (e: Exception) {
-                    delegate.onError(e)
                     Log.e("KCos.video.convert", "native code error!")
                 }
             }

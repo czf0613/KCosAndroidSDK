@@ -27,16 +27,16 @@ object KCosFileDownloader {
         fileId: Long,
         password: String? = null
     ): DownloadMetadata {
-        val url = makeUrl(fileId, password)
-        val request = Request.Builder()
-            .url(url)
-            .header("X-AppId", KCosClient.appId)
-            .header("X-AppKey", KCosClient.appKey)
-            .header("X-UserId", KCosClient.userId.toString())
-            .head()
-            .build()
-
         return withContext(Dispatchers.IO) {
+            val url = makeUrl(fileId, password)
+            val request = Request.Builder()
+                .url(url)
+                .header("X-AppId", KCosClient.appId)
+                .header("X-AppKey", KCosClient.appKey)
+                .header("X-UserId", KCosClient.userId.toString())
+                .head()
+                .build()
+
             val resp = KCosClient.httpClient.newCall(request).execute()
 
             if (resp.code >= 400)
@@ -66,21 +66,21 @@ object KCosFileDownloader {
         fileId: Long,
         password: String? = null
     ): ByteArray {
-        val url = makeUrl(fileId, password)
-        val meta = getFileDownloadMeta(fileId, password)
-
-        if (meta.contentLength > 4 * 1048576L)
-            throw ArrayIndexOutOfBoundsException("下载文件的大小超过4MB，请使用大文件下载接口")
-
-        val request = Request.Builder()
-            .url(url)
-            .header("X-AppId", KCosClient.appId)
-            .header("X-AppKey", KCosClient.appKey)
-            .header("X-UserId", KCosClient.userId.toString())
-            .get()
-            .build()
-
         return withContext(Dispatchers.IO) {
+            val url = makeUrl(fileId, password)
+            val meta = getFileDownloadMeta(fileId, password)
+
+            if (meta.contentLength > 4 * 1048576L)
+                throw ArrayIndexOutOfBoundsException("下载文件的大小超过4MB，请使用大文件下载接口")
+
+            val request = Request.Builder()
+                .url(url)
+                .header("X-AppId", KCosClient.appId)
+                .header("X-AppKey", KCosClient.appKey)
+                .header("X-UserId", KCosClient.userId.toString())
+                .get()
+                .build()
+
             val resp = KCosClient.httpClient.newCall(request).execute()
             resp.body!!.bytes()
         }
@@ -151,6 +151,7 @@ object KCosFileDownloader {
     ): Long {
         val url = makeUrl(fileId, password)
         val meta = getFileDownloadMeta(fileId, password)
+
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val request = DownloadManager.Request(Uri.parse(url)).apply {
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
