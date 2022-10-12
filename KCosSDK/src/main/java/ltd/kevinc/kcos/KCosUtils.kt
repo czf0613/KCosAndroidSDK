@@ -4,6 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.media.MediaCodec
+import android.media.MediaCodec.BufferInfo
+import android.media.MediaCodecInfo
+import android.media.MediaFormat
 import android.net.Uri
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -13,10 +17,11 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
+import java.nio.ByteBuffer
 
 /**
  * 媒体压缩工具，可以将各种媒体素材进行压缩然后进行上传
- * 这个类线程不安全，哪里用，哪里直接new，也是一个轻对象
+ * 这个类线程不安全，哪里用，哪里直接new，是一个轻对象
  * 1，图片会被转换成jpeg
  * 2，视频会被转换成h264，帧率被限30
  * 3，音频会被转换为aac
@@ -29,6 +34,15 @@ class KCosUtils {
 
     private lateinit var delegate: KCosProcessDelegate
     private var compressVideoJob: Job? = null
+    private lateinit var mediaEncoder: MediaCodec
+    private lateinit var mediaDecoder: MediaCodec
+
+    private lateinit var encoderInputBuffers: Array<ByteBuffer>
+    private lateinit var encoderOutputBuffers: Array<ByteBuffer>
+    private lateinit var encoderBufferInfo: BufferInfo
+    private lateinit var decoderInputBuffers: Array<ByteBuffer>
+    private lateinit var decoderOutputBuffers: Array<ByteBuffer>
+    private lateinit var decoderBufferInfo: BufferInfo
 
     companion object {
         // 这个值可以改，默认是30，可以改成1-100
@@ -131,6 +145,7 @@ class KCosUtils {
      * @see compressPicture 参数类型基本一致
      * @throws Exception 解码或转码过程出现错误（一般是本地的native库出错，SDK暂无办法解决）
      */
+    @Deprecated("未完成开发", level = DeprecationLevel.ERROR)
     suspend fun compressVideo(
         uri: Uri,
         context: Context,
@@ -168,17 +183,53 @@ class KCosUtils {
      * 原理是源文件 -> PCM -> aac音频
      * 请不要放进来非常长的声音文件！爆内存！
      * @param input 原始音频素材
+     * @param mimeType 输入文件的格式，例如MediaFormat.MIMETYPE_AUDIO_AAC
      * @param bitRate 输出的比特率（自带单位K），要求高一点就256，如果仅仅是发送语音消息的，设置为64就够了
      * @return 返回被编码完成的aac音频
      */
-    suspend fun compressAudioData(input: ByteArray, bitRate: Int = 256): ByteArray {
+    @Deprecated("未完成开发", level = DeprecationLevel.ERROR)
+    suspend fun compressAudioData(
+        input: ByteArray,
+        mimeType: String,
+        bitRate: Int = 256
+    ): ByteArray {
         TODO()
     }
 
     /**
      * 编码PCM数据到aac格式
+     * 一般用于手机录音之后将AudioRecord的PCM数据转化为aac
+     * @param pcm 录音采样率为44100，双声道，超过的将无法处理
      */
+    @Deprecated("未完成开发", level = DeprecationLevel.ERROR)
     suspend fun encodePCMAudioData(pcm: ByteArray, bitRate: Int = 64): ByteArray {
+        val aacFormat =
+            MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, 44100, 2).apply {
+                setInteger(MediaFormat.KEY_BIT_RATE, bitRate * 1000)
+                setInteger(
+                    MediaFormat.KEY_AAC_PROFILE,
+                    MediaCodecInfo.CodecProfileLevel.AACObjectLC
+                )
+                setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 1048576)
+            }
+
+        // 切到计算核心上面去
+        withContext(Dispatchers.Default) {
+            mediaEncoder = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC)
+            mediaEncoder.configure(aacFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
+            mediaEncoder.start()
+            encoderBufferInfo = BufferInfo()
+
+            val inputIndex = mediaEncoder.dequeueInputBuffer(-1)
+            if (inputIndex >= 0) {
+                val inputBuffer = mediaEncoder.getInputBuffer(inputIndex)!!
+                inputBuffer.clear()
+                inputBuffer.put(pcm)
+                inputBuffer.limit(pcm.size)
+                mediaEncoder.queueInputBuffer(inputIndex, 0, pcm.size, 0, 0)
+            }
+        }
+
         TODO()
     }
 }

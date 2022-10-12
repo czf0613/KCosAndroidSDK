@@ -155,6 +155,9 @@ object KCosFileDownloader {
         val request = DownloadManager.Request(Uri.parse(url)).apply {
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             setMimeType(meta.mimeType)
+            addRequestHeader("X-AppId", KCosClient.appId)
+            addRequestHeader("X-AppKey", KCosClient.appKey)
+            addRequestHeader("X-UserId", KCosClient.userId.toString())
             setTitle("KCos正在下载云文件")
             setDescription(meta.fileName)
             if (targetDestination != null)

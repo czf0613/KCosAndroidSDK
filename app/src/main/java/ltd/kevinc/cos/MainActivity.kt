@@ -5,9 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import ltd.kevinc.kcos.KCosClient
-import ltd.kevinc.kcos.KCosUtils
 import ltd.kevinc.kcos.R
-import java.io.File
 
 class MainActivity : AppCompatActivity() {
     private var cnt = 0
@@ -50,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
 
         lifecycleScope.launch {
-            val file = File("${applicationContext.dataDir.path}/fake.dat")
+//            val file = File("${applicationContext.dataDir.path}/fake.dat")
 //            file.createNewFile()
 //
 //            for (i in 0..10240) {
@@ -81,7 +79,7 @@ class MainActivity : AppCompatActivity() {
 //                }
 //            })
 
-            KCosUtils.clearCache(this@MainActivity)
+//            KCosUtils.clearCache(this@MainActivity)
 
 //            val uploader = KCosFileUploader()
 //
