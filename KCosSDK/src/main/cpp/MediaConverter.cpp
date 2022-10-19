@@ -44,6 +44,11 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
     LOGI("KCos.NDK.Video.OutputFile", "%s", outFileName.c_str());
 
     // 此处开始转码
+    // 把inputFileCopyName转码后输出到outFileName,
+    // 转码：帧率30，宽度为width参数，高度为height参数，编码器为h264
+    int videoWidth = width;
+    int videoHeight = height;
+    // 调用Android media codec
 
     // 打扫战场
     remove(inputFileCopyName.c_str());
