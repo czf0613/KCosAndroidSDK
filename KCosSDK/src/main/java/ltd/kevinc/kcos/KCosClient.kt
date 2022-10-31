@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit
 object KCosClient {
     internal val jsonContentType = "application/json;charset=utf-8".toMediaType()
     internal val binaryContentType = "application/octet-stream".toMediaType()
-    internal const val urlBase = "https://cos.kevinc.ltd:8082"
+    internal const val urlBase = "https://cos.kevinc.ltd"
     internal val httpClient by lazy {
         OkHttpClient.Builder()
             .proxy(Proxy.NO_PROXY)
