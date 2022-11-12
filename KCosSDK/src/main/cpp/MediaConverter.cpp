@@ -8,6 +8,7 @@
 #include "android/log.h"
 #include "media/NdkMediaCodec.h"
 #include "media/NdkMediaExtractor.h"
+#include "media/NdkMediaFormat.h"
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, __VA_ARGS__)
 
@@ -77,6 +78,7 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
 
     // 配置所需的输出编码器，为帧率30，宽度为width参数，高度为height参数，编码器为h264
     AMediaFormat *outputFileFormat = AMediaFormat_new();
+    AMediaFormat_setString(outputFileFormat, AMEDIAFORMAT_KEY_MIME, "video/avc");
     AMediaFormat_setInt32(outputFileFormat, AMEDIAFORMAT_KEY_WIDTH, videoWidth);
     AMediaFormat_setInt32(outputFileFormat, AMEDIAFORMAT_KEY_HEIGHT, videoHeight);
     AMediaFormat_setInt32(outputFileFormat, AMEDIAFORMAT_KEY_FRAME_RATE, 30);
