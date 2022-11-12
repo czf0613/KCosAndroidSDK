@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
-#include <unistd.h>
+#include <sys/stat.h>
 #include <stdint.h>
 #include "android/log.h"
 #include "media/NdkMediaCodec.h"
@@ -17,7 +17,6 @@
 /*
  * 鉴于安卓系统日渐严格的文件读写权限，因此只能传递一个文件fd进来
  * fd的真实文件路径非常难知道，因此也很不方便调用ffmpeg
- * 因此需要先把fd代表的真实文件拷贝进来Cache文件夹，然后就想干嘛干嘛了
  */
 extern "C"
 JNIEXPORT jstring JNICALL
@@ -28,37 +27,21 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
     srand(time(nullptr));
     int fileNameRandInt = (random() % 900000) + 100000;
     std::string fileName = std::to_string(fileNameRandInt) + ".mp4";
-    std::string inputFileCopyName = cacheDirPathBase + "/KCosCopyCache/" + fileName;
     std::string internalFileName = cacheDirPathBase + "/KCosYUVCache/" + fileName;
     std::string outFileName = cacheDirPathBase + "/KCosConversionCache/" + fileName;
-    char *buffer = (char *) malloc(10485760);
-
-    // 先实现文件拷贝
-    std::ofstream copyOutputStream;
-    copyOutputStream.open(inputFileCopyName, std::ofstream::out);
-    long contentLength;
-    long size = 0;
-    do {
-        contentLength = read(javaFileFd, buffer, 10485760);
-        copyOutputStream.write(buffer, contentLength);
-        size += contentLength;
-    } while (contentLength > 0);
-    copyOutputStream.flush();
-    copyOutputStream.close();
-    free(buffer);
-    LOGI("KCos.NDK.Video.InputFileCopy", "%s, length: %ld", inputFileCopyName.c_str(), size);
-    LOGI("KCos.NDK.Video.OutputFile", "%s", outFileName.c_str());
 
     // 此处开始转码，调用Android media codec
-    // 把inputFileCopyName转码后输出到outFileName,
+    // 转码后输出到outFileName,
     int32_t videoWidth = width;
     int32_t videoHeight = height;
     int64_t timeOutUs = 2000;
 
     // 解析媒体文件来获取decoder所需mime
+    struct stat64 videoFileInfo;
+    fstat64(javaFileFd, &videoFileInfo);
     AMediaCodec *decoder = nullptr;
     AMediaExtractor *inputVideoExtractor = AMediaExtractor_new();
-    AMediaExtractor_setDataSource(inputVideoExtractor, inputFileCopyName.c_str());
+    AMediaExtractor_setDataSourceFd(inputVideoExtractor, javaFileFd, 0, videoFileInfo.st_size);
     for (auto i = 0; i < AMediaExtractor_getTrackCount(inputVideoExtractor); ++i) {
         AMediaFormat *mediaFormat = AMediaExtractor_getTrackFormat(inputVideoExtractor, i);
         const char *mimeType;
@@ -73,7 +56,7 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
 
     // 如果找不到合适的解码器，报错
     if (decoder == nullptr) {
-        return env->NewStringUTF("Bad Native Video Codec!");
+        exit(-1);
     }
 
     // 配置所需的输出编码器，为帧率30，宽度为width参数，高度为height参数，编码器为h264
@@ -203,10 +186,8 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
     convertedFileOutputStream.close();
     LOGI("KCos.NDK.Video.Encode", "Encode success.");
 
-    // 打扫战场，清掉Cache
-    remove(inputFileCopyName.c_str());
-    LOGI("KCos.NDK.Video.YUVCache", "internal yuv cache removed.");
     remove(internalFileName.c_str());
-    LOGI("KCos.NDK.Video.InputFileCopy", "file copy cache removed.");
+    LOGI("KCos.NDK.Video.YUVCache", "internal yuv cache removed.");
+    LOGI("KCos.NDK.Video.OutputFile", "%s", outFileName.c_str());
     return env->NewStringUTF(outFileName.c_str());
 }
