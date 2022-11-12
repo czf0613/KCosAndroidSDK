@@ -53,11 +53,19 @@ class KCosUtils {
          */
         suspend fun clearCache(context: Context) {
             val copyCacheDir = File("${context.cacheDir.path}/KCosCopyCache/")
+            val yuvCacheDir = File("${context.cacheDir.path}/KCosYUVCache/")
             val outputCacheDir = File("${context.cacheDir.path}/KCosConversionCache/")
 
             withContext(Dispatchers.IO) {
                 if (copyCacheDir.exists()) {
                     copyCacheDir.deleteRecursively()
+                    Log.i("KCos.Cache", "Copy Cache已清除")
+                } else {
+                    Log.i("KCos.Cache", "Copy Cache为空")
+                }
+
+                if (yuvCacheDir.exists()) {
+                    yuvCacheDir.deleteRecursively()
                     Log.i("KCos.Cache", "Copy Cache已清除")
                 } else {
                     Log.i("KCos.Cache", "Copy Cache为空")
