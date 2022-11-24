@@ -4,7 +4,7 @@
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.18.1)
+cmake_minimum_required(VERSION 3.22.0)
 
 # Declares and names the project.
 
@@ -44,6 +44,8 @@ find_library( # Sets the name of the path variable.
 target_link_libraries( # Specifies the target library.
         MediaConverter
 
+        android
+        mediandk
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})

@@ -16,7 +16,7 @@
 
 /*
  * 鉴于安卓系统日渐严格的文件读写权限，因此只能传递一个文件fd进来
- * fd的真实文件路径非常难知道，因此也很不方便调用ffmpeg
+ * fd的真实文件路径非常难知道，因此也很不方便调用ndk方法
  */
 extern "C"
 JNIEXPORT jstring JNICALL
@@ -101,24 +101,20 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
             }
         }
 
-        // 每次input，就把所有已解码的数据一次性全部取出，因为解码的时候，output很可能比input多
-        ssize_t outputBufferIndex;
         AMediaCodecBufferInfo outputBufferInfo;
-        do {
-            outputBufferIndex = AMediaCodec_dequeueOutputBuffer(decoder, &outputBufferInfo,
-                                                                timeOutUs);
-            if (outputBufferIndex >= 0) {
-                if (outputBufferInfo.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM) {
-                    isDecodeOutputEOF = true;
-                }
-
-                uint8_t *outputBuffer = AMediaCodec_getOutputBuffer(decoder, outputBufferIndex,
-                                                                    nullptr);
-                internalFileOutputStream.write(
-                        (const char *) (outputBuffer + outputBufferInfo.offset),
-                        outputBufferInfo.size);
+        ssize_t outputBufferIndex = AMediaCodec_dequeueOutputBuffer(decoder, &outputBufferInfo,
+                                                                    timeOutUs);
+        if (outputBufferIndex >= 0) {
+            if (outputBufferInfo.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM) {
+                isDecodeOutputEOF = true;
             }
-        } while (outputBufferIndex >= 0 && !isDecodeOutputEOF);
+
+            uint8_t *outputBuffer = AMediaCodec_getOutputBuffer(decoder, outputBufferIndex,
+                                                                nullptr);
+            internalFileOutputStream.write(
+                    (const char *) (outputBuffer + outputBufferInfo.offset),
+                    outputBufferInfo.size);
+        }
     }
 
     // 结束解码
@@ -163,7 +159,6 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
             }
         }
 
-        // 因为编码过程中，产出速度大概率比不上输入速度，所以这里不需要还做一层while循环，直接取出即可
         AMediaCodecBufferInfo outputBufferInfo;
         ssize_t outputBufferIndex = AMediaCodec_dequeueOutputBuffer(encoder, &outputBufferInfo,
                                                                     timeOutUs);
