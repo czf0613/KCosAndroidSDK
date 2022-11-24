@@ -11,7 +11,7 @@
 #include "media/NdkMediaFormat.h"
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, __VA_ARGS__)
-
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, __VA_ARGS__)
 // Write C++ code here.
 
 /*
@@ -50,12 +50,14 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
         if (strncmp(mimeType, "video/", 6) == 0) {
             decoder = AMediaCodec_createDecoderByType(mimeType);
             AMediaCodec_configure(decoder, mediaFormat, nullptr, nullptr, 0);
+            LOGI("KCos.NDK.Video.Decode", "find decoder name: %s", mimeType);
             break;
         }
     }
 
     // 如果找不到合适的解码器，报错
     if (decoder == nullptr) {
+        LOGE("KCos.NDK.Video.Decode", "No Decoder Found!");
         exit(-1);
     }
 
@@ -115,6 +117,8 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
                     (const char *) (outputBuffer + outputBufferInfo.offset),
                     outputBufferInfo.size);
         }
+
+        LOGI("KCos.NDK.Video.Decode", "Decoded 1 frame...");
     }
 
     // 结束解码
@@ -173,6 +177,8 @@ Java_ltd_kevinc_kcos_KCosUtils_convertVideoWithOptions(JNIEnv *env, jobject thiz
                     (const char *) (outputBuffer + outputBufferInfo.offset),
                     outputBufferInfo.size);
         }
+
+        LOGI("KCos.NDK.Video.Encode", "Encoded 1 frame...");
     }
 
     // 结束编码

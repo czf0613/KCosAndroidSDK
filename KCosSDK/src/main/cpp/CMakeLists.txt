@@ -46,6 +46,7 @@ target_link_libraries( # Specifies the target library.
 
         android
         mediandk
+        OpenMAXAL
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})

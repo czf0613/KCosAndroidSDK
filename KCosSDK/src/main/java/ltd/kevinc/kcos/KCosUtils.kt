@@ -12,7 +12,6 @@ import android.net.Uri
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -143,31 +142,28 @@ class KCosUtils {
      * 绝大部分的错误，会在delegate的OnError方法中扔出，但不意味着这个方法很安全，可能是一些JNI方法级别的错误
      * @see compressPicture 参数类型基本一致
      * @throws Exception 解码或转码过程出现错误（一般是本地的native库出错，SDK暂无办法解决）
+     * @return 返回转码后的视频的路径，可以直接用File打开
      */
-    @Deprecated("未完成开发", level = DeprecationLevel.ERROR)
     suspend fun compressVideo(
         uri: Uri,
         context: Context,
         width: Int = -1,
         height: Int = -1,
-    ) {
+    ): String {
         // 在计算核心上面跑转码运算性能会更好
-        withContext(Dispatchers.Default) {
-            compressVideoJob?.cancel()
-
-            compressVideoJob = launch {
-                try {
-                    context.contentResolver.openFileDescriptor(uri, "r")?.use { fd ->
-                        val output = convertVideoWithOptions(
-                            fd.detachFd(),
-                            context.cacheDir.path,
-                            width,
-                            height
-                        )
-                    } ?: throw FileNotFoundException()
-                } catch (e: Exception) {
-                    Log.e("KCos.video.convert", "native code error!")
-                }
+        return withContext(Dispatchers.Default) {
+            try {
+                return@withContext context.contentResolver.openFileDescriptor(uri, "r")?.use { fd ->
+                    convertVideoWithOptions(
+                        fd.detachFd(),
+                        context.cacheDir.path,
+                        width,
+                        height
+                    )
+                } ?: throw FileNotFoundException()
+            } catch (e: Exception) {
+                Log.e("KCos.video.convert", "native code error!")
+                throw e
             }
         }
     }
