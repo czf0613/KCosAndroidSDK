@@ -20,8 +20,8 @@ import java.io.InputStream
 import java.lang.Integer.min
 import java.security.MessageDigest
 
-@Suppress("BlockingMethodInNonBlockingContext")
 @OptIn(ExperimentalSerializationApi::class)
+@Suppress("BlockingMethodInNonBlockingContext")
 object KCosFileUploader {
     /**
      * 上传文件，有多个重载方便进行使用。上传不可以使用并行的手段，服务器中做出了限制，并行上传会扔出异常

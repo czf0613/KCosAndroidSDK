@@ -22,7 +22,6 @@ object KCosFileDownloader {
      * 获取下载文件的元信息，例如MimeType、文件大小、文件名等等
      * @throws okio.IOException 表示文件不允许下载
      */
-    @JvmStatic
     suspend fun getFileDownloadMeta(
         fileId: Long,
         password: String? = null
@@ -61,7 +60,6 @@ object KCosFileDownloader {
      * @throws ArrayIndexOutOfBoundsException 文件太大，缓冲区的位置不够用
      * @throws okio.IOException 表示文件不允许下载
      */
-    @JvmStatic
     suspend fun downloadSimpleFile(
         fileId: Long,
         password: String? = null
@@ -96,7 +94,6 @@ object KCosFileDownloader {
      * @throws okio.IOException 表示文件不允许下载
      * @throws ArrayIndexOutOfBoundsException 起止点不合法
      */
-    @JvmStatic
     suspend fun downloadLargeFile(
         fileId: Long,
         password: String? = null,
@@ -142,7 +139,6 @@ object KCosFileDownloader {
      * @return 下载任务的ID，由安卓系统提供
      * @throws okio.IOException 表示文件不允许下载
      */
-    @JvmStatic
     suspend fun downloadViaSystemDownloadManager(
         fileId: Long,
         context: Context,
