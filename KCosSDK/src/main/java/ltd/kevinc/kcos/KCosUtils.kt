@@ -47,6 +47,68 @@ class KCosUtils {
         var jpegQuality = 30
 
         /**
+         * 压缩Bitmap，注意，压缩后原有的bitmap会被recycle
+         * @param width 图片宽度，设置为非正数的时候，表示维持原图的宽度
+         * @param height 图片高度，设置为非正数的时候，表示维持原图的高度
+         * @return 返回jpegData，可以直接进行网络发送，或者重新使用Image进行decode
+         * @throws Exception 利用Bitmap的原生转码能力，可能由于安卓平台的实现问题，可能会出现各种各样的问题
+         */
+        suspend fun compressBitmap(bitmap: Bitmap, width: Int = -1, height: Int = -1): ByteArray {
+            val expectedWidth = if (width <= 0) bitmap.width else width
+            val expectedHeight = if (height <= 0) bitmap.height else height
+
+            val scaleMatrix = Matrix().apply {
+                postScale(
+                    expectedWidth.toFloat() / bitmap.width,
+                    expectedHeight.toFloat() / bitmap.height
+                )
+            }
+
+            return withContext(Dispatchers.Default) {
+                val tempBitmap =
+                    Bitmap.createBitmap(
+                        bitmap,
+                        0,
+                        0,
+                        bitmap.width,
+                        bitmap.height,
+                        scaleMatrix,
+                        true
+                    )
+
+                ByteArrayOutputStream().use { stream ->
+                    tempBitmap.compress(Bitmap.CompressFormat.JPEG, jpegQuality, stream)
+                    stream.flush()
+                    tempBitmap.recycle()
+                    bitmap.recycle()
+
+                    stream.toByteArray()
+                }
+            }
+        }
+
+        /**
+         * 获取Uri对应的资源并进行压缩。注意，对应资源必须是受支持的图片类型，否则无法压缩
+         * 受支持的图片类型为png, jpg, webp和HEIC（不稳定）
+         * heic的解码不一定能够成功，受制于硬件编码器的限制
+         * @see compressBitmap 参数定义看此处定义
+         * @throws java.io.FileNotFoundException 当文件的Uri无法被查询到的时候，会扔出一个异常，通常情况下不会发生这样的事情
+         * @throws Exception 解码或转码过程出现错误（一般是本地的native库出错，SDK暂无办法解决）
+         */
+        suspend fun compressPicture(
+            uri: Uri,
+            context: Context,
+            width: Int = -1,
+            height: Int = -1
+        ): ByteArray {
+            return withContext(Dispatchers.IO) {
+                val bitmap =
+                    BitmapFactory.decodeStream(context.contentResolver.openInputStream(uri))
+                compressBitmap(bitmap, width, height)
+            }
+        }
+
+        /**
          * 删除KCos产生的转码缓存文件
          * 别在转码过程中清除缓存，搞事情！
          */
@@ -85,65 +147,13 @@ class KCosUtils {
     ): String
 
     /**
-     * 压缩Bitmap，注意，压缩后原有的bitmap会被recycle
-     * @param width 图片宽度，设置为非正数的时候，表示维持原图的宽度
-     * @param height 图片高度，设置为非正数的时候，表示维持原图的高度
-     * @return 返回jpegData，可以直接进行网络发送，或者重新使用Image进行decode
-     * @throws Exception 利用Bitmap的原生转码能力，可能由于安卓平台的实现问题，可能会出现各种各样的问题
-     */
-    suspend fun compressBitmap(bitmap: Bitmap, width: Int = -1, height: Int = -1): ByteArray {
-        val expectedWidth = if (width <= 0) bitmap.width else width
-        val expectedHeight = if (height <= 0) bitmap.height else height
-
-        val scaleMatrix = Matrix().apply {
-            postScale(
-                expectedWidth.toFloat() / bitmap.width,
-                expectedHeight.toFloat() / bitmap.height
-            )
-        }
-
-        return withContext(Dispatchers.Default) {
-            val tempBitmap =
-                Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, scaleMatrix, true)
-
-            ByteArrayOutputStream().use { stream ->
-                tempBitmap.compress(Bitmap.CompressFormat.JPEG, jpegQuality, stream)
-                stream.flush()
-                tempBitmap.recycle()
-                bitmap.recycle()
-
-                stream.toByteArray()
-            }
-        }
-    }
-
-    /**
-     * 获取Uri对应的资源并进行压缩。注意，对应资源必须是受支持的图片类型，否则无法压缩
-     * 受支持的图片类型为png, jpg, webp和HEIC（不稳定）
-     * heic的解码不一定能够成功，受制于硬件编码器的限制
-     * @see compressBitmap 参数定义看此处定义
-     * @throws java.io.FileNotFoundException 当文件的Uri无法被查询到的时候，会扔出一个异常，通常情况下不会发生这样的事情
-     * @throws Exception 解码或转码过程出现错误（一般是本地的native库出错，SDK暂无办法解决）
-     */
-    suspend fun compressPicture(
-        uri: Uri,
-        context: Context,
-        width: Int = -1,
-        height: Int = -1
-    ): ByteArray {
-        return withContext(Dispatchers.IO) {
-            val bitmap = BitmapFactory.decodeStream(context.contentResolver.openInputStream(uri))
-            compressBitmap(bitmap, width, height)
-        }
-    }
-
-    /**
      * 将手机内的视频压缩成h264编码，
      * 绝大部分的错误，会在delegate的OnError方法中扔出，但不意味着这个方法很安全，可能是一些JNI方法级别的错误
      * @see compressPicture 参数类型基本一致
      * @throws Exception 解码或转码过程出现错误（一般是本地的native库出错，SDK暂无办法解决）
      * @return 返回转码后的视频的路径，可以直接用File打开
      */
+    @Deprecated(message = "未开发完成", level = DeprecationLevel.ERROR)
     suspend fun compressVideo(
         uri: Uri,
         context: Context,

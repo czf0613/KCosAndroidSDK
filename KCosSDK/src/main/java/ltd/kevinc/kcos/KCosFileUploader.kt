@@ -221,7 +221,7 @@ object KCosFileUploader {
         val binaryRequestBody = content.toRequestBody(KCosClient.binaryContentType)
 
         val binaryRequest = Request.Builder()
-            .url("${KCosClient.urlBase}/file/upload?fileId=$fileId&seqNumber=$sequenceNumber")
+            .url("https://tcp-cos.kevinc.ltd:8080/file/upload?fileId=$fileId&seqNumber=$sequenceNumber")
             .header("X-AppId", KCosClient.appId)
             .header("X-AppKey", KCosClient.appKey)
             .header("X-UserId", KCosClient.userId.toString())

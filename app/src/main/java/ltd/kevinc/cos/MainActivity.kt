@@ -44,10 +44,10 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             val videoUri = data!!.data!!
-            val newVideoFilePath = kcosUtils.compressVideo(videoUri, this@MainActivity, 1920, 1080)
-            val file = File(newVideoFilePath)
-            videoView.setVideoURI(file.toUri())
-            videoView.start()
+//            val newVideoFilePath = kcosUtils.compressVideo(videoUri, this@MainActivity, 1920, 1080)
+//            val file = File(newVideoFilePath)
+//            videoView.setVideoURI(file.toUri())
+//            videoView.start()
         }
     }
 }
