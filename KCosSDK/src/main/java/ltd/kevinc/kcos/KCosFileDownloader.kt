@@ -16,7 +16,7 @@ import kotlin.math.min
 @Suppress("BlockingMethodInNonBlockingContext")
 object KCosFileDownloader {
     private fun makeUrl(fileId: Long, password: String? = null): String =
-        "${KCosClient.urlBase}/file/download?fileId=$fileId" + (if (password == null) "" else "&password=$password")
+        "${KCosClient.downloadUrlBase}/file/download?fileId=$fileId" + (if (password == null) "" else "&password=$password")
 
     /**
      * 获取下载文件的元信息，例如MimeType、文件大小、文件名等等
