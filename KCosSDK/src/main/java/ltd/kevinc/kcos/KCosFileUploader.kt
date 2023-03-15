@@ -41,27 +41,7 @@ object KCosFileUploader {
             createFileEntryRequest.fileSize = fd.statSize
         }
 
-        val reply = withContext(Dispatchers.IO) {
-            val requestBody =
-                KCosClient.jsonSerializer.encodeToString(createFileEntryRequest)
-                    .toRequestBody(KCosClient.jsonContentType)
-
-            val request = Request.Builder()
-                .url("${KCosClient.urlBase}/file/createFileEntry")
-                .header("X-AppId", KCosClient.appId)
-                .header("X-AppKey", KCosClient.appKey)
-                .header("X-UserId", KCosClient.userId.toString())
-                .post(requestBody)
-                .build()
-
-            try {
-                val resp = KCosClient.httpClient.newCall(request).execute()
-                KCosClient.jsonSerializer.decodeFromStream<CreateFileEntryReply>(resp.body!!.byteStream())
-            } catch (e: Exception) {
-                Log.e("KCos.createFileEntry", e.stackTraceToString())
-                throw e
-            }
-        }
+        val reply = createFileEntry(createFileEntryRequest)
 
         if (reply.nextRequestedFrame == 0L) {
             Log.i(
@@ -112,36 +92,18 @@ object KCosFileUploader {
         createFileEntryRequest.sha256 = calculateSHA256(content)
         createFileEntryRequest.fileSize = content.size.toLong()
 
+        val reply = createFileEntry(createFileEntryRequest)
+
+        if (reply.nextRequestedFrame == 0L) {
+            Log.i(
+                "KCos.createFileEntry",
+                "file already existed a copy, you can use it without uploading."
+            )
+
+            return reply
+        }
+
         return withContext(Dispatchers.IO) {
-            val requestBody =
-                KCosClient.jsonSerializer.encodeToString(createFileEntryRequest)
-                    .toRequestBody(KCosClient.jsonContentType)
-
-            val request = Request.Builder()
-                .url("${KCosClient.urlBase}/file/createFileEntry")
-                .header("X-AppId", KCosClient.appId)
-                .header("X-AppKey", KCosClient.appKey)
-                .header("X-UserId", KCosClient.userId.toString())
-                .post(requestBody)
-                .build()
-
-            val reply = try {
-                val resp = KCosClient.httpClient.newCall(request).execute()
-                KCosClient.jsonSerializer.decodeFromStream<CreateFileEntryReply>(resp.body!!.byteStream())
-            } catch (e: Exception) {
-                Log.e("KCos.createFileEntry", e.stackTraceToString())
-                throw e
-            }
-
-            if (reply.nextRequestedFrame == 0L) {
-                Log.i(
-                    "KCos.createFileEntry",
-                    "file already existed a copy, you can use it without uploading."
-                )
-
-                return@withContext reply
-            }
-
             var cnt = 1
             while (cnt <= reply.frames) {
                 val slice = content.sliceArray(
@@ -178,8 +140,9 @@ object KCosFileUploader {
                 .build()
 
             try {
-                val resp = KCosClient.httpClient.newCall(request).execute()
-                resp.body!!.string().toInt()
+                KCosClient.httpClient.newCall(request).execute().use { resp ->
+                    resp.body!!.string().toInt()
+                }
             } catch (e: Exception) {
                 Log.e("KCos.continueUpload", "failed to fetch frames, cannot continue upload!")
                 throw e
@@ -209,8 +172,33 @@ object KCosFileUploader {
         }.flowOn(Dispatchers.IO)
     }
 
+    suspend fun createFileEntry(createFileEntryRequest: CreateFileEntryRequest): CreateFileEntryReply {
+        return withContext(Dispatchers.IO) {
+            val requestBody =
+                KCosClient.jsonSerializer.encodeToString(createFileEntryRequest)
+                    .toRequestBody(KCosClient.jsonContentType)
+
+            val request = Request.Builder()
+                .url("${KCosClient.urlBase}/file/createFileEntry")
+                .header("X-AppId", KCosClient.appId)
+                .header("X-AppKey", KCosClient.appKey)
+                .header("X-UserId", KCosClient.userId.toString())
+                .post(requestBody)
+                .build()
+
+            try {
+                KCosClient.httpClient.newCall(request).execute().use { resp ->
+                    KCosClient.jsonSerializer.decodeFromStream(resp.body!!.byteStream())
+                }
+            } catch (e: Exception) {
+                Log.e("KCos.createFileEntry", e.stackTraceToString())
+                throw e
+            }
+        }
+    }
+
     /**
-     * 不要在主线程调这个方法，会crash，用withContext切一下
+     * 不要在主线程调这个方法
      * @return 下一帧需要传输的序列Id
      */
     private fun uploadPack(
@@ -228,17 +216,18 @@ object KCosFileUploader {
             .put(binaryRequestBody)
             .build()
 
-        val resp = KCosClient.httpClient.newCall(binaryRequest).execute()
+        return KCosClient.httpClient.newCall(binaryRequest).execute().use { resp ->
 
-        if (resp.code >= 400) {
-            // 上传过程中出错
-            Log.e("KCos.uploadPack", resp.body!!.string())
-            throw IllegalArgumentException(resp.body!!.string())
+            if (resp.code >= 400) {
+                // 上传过程中出错
+                Log.e("KCos.uploadPack", resp.body!!.string())
+                throw IllegalArgumentException(resp.body!!.string())
+            }
+
+            val reply =
+                KCosClient.jsonSerializer.decodeFromStream<UploadReply>(resp.body!!.byteStream())
+            reply.nextRequestedFrame
         }
-
-        val reply =
-            KCosClient.jsonSerializer.decodeFromStream<UploadReply>(resp.body!!.byteStream())
-        return reply.nextRequestedFrame
     }
 
     /**

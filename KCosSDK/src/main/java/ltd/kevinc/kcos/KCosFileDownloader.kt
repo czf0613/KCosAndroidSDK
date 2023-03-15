@@ -36,21 +36,21 @@ object KCosFileDownloader {
                 .head()
                 .build()
 
-            val resp = KCosClient.httpClient.newCall(request).execute()
+            KCosClient.httpClient.newCall(request).execute().use { resp ->
+                if (resp.code >= 400)
+                    throw IOException("该文件不允许下载")
 
-            if (resp.code >= 400)
-                throw IOException("该文件不允许下载")
+                val type = resp.header("Content-Type", "application/octet-stream")
+                val length = resp.header("Content-Length", "0")
+                val fileName = resp.header("Content-Disposition", "filename=unknown.file")
+                    ?: "filename=unknown.file"
 
-            val type = resp.header("Content-Type", "application/octet-stream")
-            val length = resp.header("Content-Length", "0")
-            val fileName = resp.header("Content-Disposition", "filename=unknown.file")
-                ?: "filename=unknown.file"
-
-            DownloadMetadata(
-                contentLength = length?.toLong() ?: 0L,
-                mimeType = type ?: "application/octet-stream",
-                fileName = fileName.substring(9)
-            )
+                DownloadMetadata(
+                    contentLength = length?.toLong() ?: 0L,
+                    mimeType = type ?: "application/octet-stream",
+                    fileName = fileName.substring(9)
+                )
+            }
         }
     }
 
@@ -79,8 +79,9 @@ object KCosFileDownloader {
                 .get()
                 .build()
 
-            val resp = KCosClient.httpClient.newCall(request).execute()
-            resp.body!!.bytes()
+            KCosClient.httpClient.newCall(request).execute().use { resp ->
+                resp.body!!.bytes()
+            }
         }
     }
 
@@ -125,10 +126,11 @@ object KCosFileDownloader {
                     .get()
                     .build()
 
-                val resp = KCosClient.httpClient.newCall(request).execute()
+                KCosClient.httpClient.newCall(request).execute().use { resp ->
 
-                emit(resp.body!!.bytes())
-                currentBytes += 1048576
+                    emit(resp.body!!.bytes())
+                    currentBytes += 1048576
+                }
             }
         }.flowOn(Dispatchers.IO)
     }

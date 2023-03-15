@@ -60,12 +60,14 @@ object KCosClient {
 
         return withContext(Dispatchers.IO) {
             try {
-                val resp = httpClient.newCall(request).execute()
-                val reply = jsonSerializer.decodeFromStream<GetOrCreateUserReply>(resp.body!!.byteStream())
+                httpClient.newCall(request).execute().use { resp ->
+                    val reply =
+                        jsonSerializer.decodeFromStream<GetOrCreateUserReply>(resp.body!!.byteStream())
 
-                this@KCosClient.userId = reply.userId
+                    this@KCosClient.userId = reply.userId
 
-                reply.userId
+                    reply.userId
+                }
             } catch (e: Exception) {
                 Log.e("KCos.initSDK", e.stackTraceToString())
 
