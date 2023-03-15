@@ -37,6 +37,7 @@ object KCosFileUploader {
         context.contentResolver.openInputStream(uri)!!.use { stream ->
             createFileEntryRequest.sha256 = calculateSHA256(stream)
         }
+
         context.contentResolver.openFileDescriptor(uri, "r")!!.use { fd ->
             createFileEntryRequest.fileSize = fd.statSize
         }
@@ -209,7 +210,7 @@ object KCosFileUploader {
         val binaryRequestBody = content.toRequestBody(KCosClient.binaryContentType)
 
         val binaryRequest = Request.Builder()
-            .url("https://tcp-cos.kevinc.ltd:8080/file/upload?fileId=$fileId&seqNumber=$sequenceNumber")
+            .url("${KCosClient.urlBase}/file/upload?fileId=$fileId&seqNumber=$sequenceNumber")
             .header("X-AppId", KCosClient.appId)
             .header("X-AppKey", KCosClient.appKey)
             .header("X-UserId", KCosClient.userId.toString())
